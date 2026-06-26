@@ -94,14 +94,15 @@ function parseMembers(text) {
 }
 
 // 처음 팀 만들 때 사용하는 함수
-// 입력한 teamSize 기준으로 3명씩, 4명씩 이런 식으로 자름
+// 셔플 후 라운드로빈으로 한 명씩 돌아가며 배정 → 나머지 인원도 균등하게 분배됨
 function makeRandomTeams(memberList, teamSize) {
   const shuffled = shuffle([...memberList]);
-  const result = [];
+  const numTeams = Math.ceil(shuffled.length / teamSize);
+  const result = Array.from({ length: numTeams }, () => []);
 
-  for (let i = 0; i < shuffled.length; i += teamSize) {
-    result.push(shuffled.slice(i, i + teamSize));
-  }
+  shuffled.forEach((member, i) => {
+    result[i % numTeams].push(member);
+  });
 
   return result;
 }
