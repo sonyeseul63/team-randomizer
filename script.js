@@ -7,7 +7,6 @@ const shuffleBtn = document.querySelector("#shuffleBtn");
 const copyImageBtn = document.querySelector("#copyImageBtn");
 const summary = document.querySelector("#summary");
 const hint = document.querySelector("#hint");
-const resultBtns = document.querySelector("#resultBtns");
 const teamBoard = document.querySelector("#teamBoard");
 
 fileInput.addEventListener("change", () => {
@@ -45,7 +44,7 @@ async function handleMakeTeams() {
     members = parseMembers(text);
 
     if (members.length === 0) {
-      showToast("파일에 구성원 이름이 없습니다");
+      showToast("파일에 구성원 이름이 없어요");
       return;
     }
 
@@ -54,13 +53,13 @@ async function handleMakeTeams() {
     render();
   } catch (error) {
     console.error(error);
-    showToast("파일을 읽는 중 문제가 생겼습니다");
+    showToast("파일을 읽는 중 문제가 생겼어요");
   }
 }
 
 function handleShuffleAgain() {
   if (teams.length === 0) {
-    showToast("먼저 txt 파일로 팀을 만들어줘");
+    showToast("먼저 txt 파일로 팀을 만들어 주세요");
     return;
   }
 
@@ -80,7 +79,7 @@ function getTeamSize() {
   const teamSize = Number(teamSizeInput.value);
 
   if (!Number.isInteger(teamSize) || teamSize < 1) {
-    showToast("팀당 인원은 1 이상의 정수로 입력해줘");
+    showToast("팀당 인원은 1 이상의 정수로 입력해주세요");
     return null;
   }
 
@@ -139,23 +138,6 @@ function shuffle(array) {
 function render() {
   const teamSize = getTeamSize() ?? 1;
   const total = teams.flat().length;
-
-  if (teams.length === 0) {
-    summary.textContent = "";
-    hint.textContent = "";
-    resultBtns.hidden = true;
-    teamBoard.innerHTML = `<div class="empty-state"><pre class="ascii-art">  _______
- /       \\
-|  o   o  |
-|    ^    |
-|   ___   |
- \\_______/
-
-    /| |\\
-   / | | \\
-    /   \\</pre>두근두근 . .</div>`;
-    return;
-  }
 
   summary.textContent = `총 ${total}명 · ${teams.length}팀`;
   hint.innerHTML = "이름을 드래그해 팀을 조정하거나, 인원수를 바꿀 수 있어요.<br>바뀐 인원 수에서 다시 섞어보세요.";
@@ -277,7 +259,7 @@ function moveMember(fromTeamIndex, fromMemberIndex, toTeamIndex) {
 
 async function handleCopyImage() {
   if (teams.length === 0) {
-    showToast("복사할 팀 결과가 없어");
+    showToast("복사할 팀 결과가 없어요");
     return;
   }
 
@@ -291,7 +273,7 @@ async function handleCopyImage() {
       }),
     ]);
 
-    showToast("팀 결과 이미지를 클립보드에 복사했어");
+    showToast("팀 결과 이미지를 클립보드에 복사했어요");
   } catch (error) {
     console.error(error);
 
@@ -304,7 +286,7 @@ async function handleCopyImage() {
     link.download = "team-result.png";
     link.click();
 
-    showToast("클립보드 복사가 막혀서 PNG로 다운로드했어");
+    showToast("클립보드 복사가 막혀서 PNG로 다운로드했어요");
   }
 }
 
