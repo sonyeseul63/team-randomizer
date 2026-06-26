@@ -3,43 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>랜덤 팀 배정기 MVP</title>
+  <title>팀 배정기</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-text">팀 짜줍니다</span>
+      </div>
+    </div>
+  </header>
+
   <main class="app">
+    <div class="hero">
+      <div class="hero-icon">🎲</div>
+    </div>
+
     <section class="panel controls">
       <div class="field">
-        <label for="memberFile">구성원 txt 파일 (이름을 줄단위로 적어주세요)</label>
-        <input id="memberFile" type="file" accept=".txt,text/plain" />
+        <label class="field-label" for="memberFile">구성원 파일 <span class="field-label-hint">이름을 줄 단위로 작성한 .txt 파일</span></label>
+        <div class="file-upload-wrapper">
+          <div class="file-upload-display">
+<span id="fileUploadText" class="file-upload-text">클릭해서 .txt 파일 선택</span>
+          </div>
+          <input id="memberFile" type="file" accept=".txt,text/plain" />
+        </div>
       </div>
 
       <div class="field">
-        <label for="teamSize">팀당 인원</label>
+        <label class="field-label" for="teamSize">팀당 인원</label>
         <input id="teamSize" type="number" min="1" value="3" />
       </div>
 
-      <div class="button-group">
-        <button id="makeBtn" type="button">팀 생성</button>
+      <div class="button-group controls-btn">
+        <button id="makeBtn" type="button">팀 생성하기</button>
       </div>
     </section>
 
-    <section id="captureArea" class="board-wrap" hidden>
+    <section id="captureArea" class="board-wrap">
       <div class="board-title">
         <div class="title-group">
-          <h1>팀 결과</h1>
-          <p id="summary"></p>
+          <h2>팀 결과</h2>
+          <span class="summary-badge" id="summary"></span>
         </div>
-        <div class="button-group">
-          <button id="shuffleBtn" type="button" class="secondary">인원 섞기</button>
+        <div class="button-group" id="resultBtns" hidden>
+          <button id="shuffleBtn" type="button" class="secondary">다시 섞기</button>
           <button id="copyImageBtn" type="button" class="secondary">이미지 복사</button>
         </div>
       </div>
-      <div class="panel summary-panel">
-        <p id="hint" class="hint"></p>
-      </div>
+      <p id="hint" class="hint"></p>
 
-      <div id="teamBoard" class="team-board"></div>
+      <div id="teamBoard" class="team-board">
+        <div class="empty-state">
+          <pre class="ascii-art">  _______
+ /       \
+|  o   o  |
+|    ^    |
+|   ___   |
+ \_______/
+
+    /| |\
+   / | | \
+    /   \</pre>
+          두근두근 . .
+</div>
+      </div>
     </section>
   </main>
 

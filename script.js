@@ -1,12 +1,25 @@
 const fileInput = document.querySelector("#memberFile");
+const fileUploadWrapper = fileInput.closest(".file-upload-wrapper");
+const fileUploadText = document.querySelector("#fileUploadText");
 const teamSizeInput = document.querySelector("#teamSize");
 const makeBtn = document.querySelector("#makeBtn");
 const shuffleBtn = document.querySelector("#shuffleBtn");
 const copyImageBtn = document.querySelector("#copyImageBtn");
 const summary = document.querySelector("#summary");
 const hint = document.querySelector("#hint");
-const captureArea = document.querySelector("#captureArea");
+const resultBtns = document.querySelector("#resultBtns");
 const teamBoard = document.querySelector("#teamBoard");
+
+fileInput.addEventListener("change", () => {
+  const file = fileInput.files[0];
+  if (file) {
+    fileUploadText.textContent = file.name;
+    fileUploadWrapper.classList.add("has-file");
+  } else {
+    fileUploadText.textContent = "클릭해서 .txt 파일 선택";
+    fileUploadWrapper.classList.remove("has-file");
+  }
+});
 
 let members = [];
 let teams = [];
@@ -21,7 +34,7 @@ async function handleMakeTeams() {
   const teamSize = getTeamSize();
 
   if (!file) {
-    showToast("구성원 txt 파일을 먼저 선택해줘");
+    showToast("구성원 txt 파일을 먼저 선택해주세요");
     return;
   }
 
@@ -32,7 +45,7 @@ async function handleMakeTeams() {
     members = parseMembers(text);
 
     if (members.length === 0) {
-      showToast("파일에 구성원 이름이 없어");
+      showToast("파일에 구성원 이름이 없습니다");
       return;
     }
 
@@ -41,7 +54,7 @@ async function handleMakeTeams() {
     render();
   } catch (error) {
     console.error(error);
-    showToast("파일을 읽는 중 문제가 생겼어");
+    showToast("파일을 읽는 중 문제가 생겼습니다");
   }
 }
 
@@ -52,8 +65,6 @@ function handleShuffleAgain() {
   }
 
   // 현재 사용자가 드래그로 조정한 팀별 인원 수 저장
-  // 예: 3,3,2 -> [3, 3, 2]
-  // 예: 4,4 -> [4, 4]
   const currentLayout = teams.map((team) => team.length);
 
   // 현재 화면에 있는 모든 이름을 다시 모음
@@ -96,7 +107,7 @@ function makeRandomTeams(memberList, teamSize) {
   return result;
 }
 
-// 또 섞기 때 사용하는 함수
+// 섞기에 사용하는 함수
 // 현재 팀별 인원 수 layout을 유지한 채 이름만 다시 섞음
 function makeRandomTeamsByLayout(memberList, layout) {
   const shuffled = shuffle([...memberList]);
@@ -124,20 +135,31 @@ function shuffle(array) {
   return array;
 }
 
+// 팀 생성후 화면 렌더링
 function render() {
   const teamSize = getTeamSize() ?? 1;
   const total = teams.flat().length;
 
-  summary.textContent = `${total}명`;
-  hint.textContent =
-    "이름을 드래그해서 다른 팀으로 옮기거나 인원수를 바꿀 수 있어요.";
-
   if (teams.length === 0) {
-    captureArea.hidden = true;
+    summary.textContent = "";
+    hint.textContent = "";
+    resultBtns.hidden = true;
+    teamBoard.innerHTML = `<div class="empty-state"><pre class="ascii-art">  _______
+ /       \\
+|  o   o  |
+|    ^    |
+|   ___   |
+ \\_______/
+
+    /| |\\
+   / | | \\
+    /   \\</pre>두근두근 . .</div>`;
     return;
   }
 
-  captureArea.hidden = false;
+  summary.textContent = `총 ${total}명 · ${teams.length}팀`;
+  hint.innerHTML = "이름을 드래그해 팀을 조정하거나, 인원수를 바꿀 수 있어요.<br>바뀐 인원 수에서 다시 섞어보세요.";
+  resultBtns.hidden = false;
   teamBoard.innerHTML = teams
     .map((team, teamIndex) => {
       const isLeftover =
@@ -150,7 +172,10 @@ function render() {
           data-team-index="${teamIndex}"
         >
           <div class="team-header">
+            <div class="team-label">
+              <span class="team-num">${teamIndex + 1}</span>
             <h3>${escapeHtml(title)}</h3>
+            </div>
             <span>${team.length}명</span>
           </div>
 
@@ -178,6 +203,7 @@ function render() {
   attachDragEvents();
 }
 
+// 드래그
 function attachDragEvents() {
   const cards = document.querySelectorAll(".member-card");
   const rows = document.querySelectorAll(".team-row");
@@ -231,6 +257,7 @@ function attachDragEvents() {
   });
 }
 
+// 멤버 저장
 function moveMember(fromTeamIndex, fromMemberIndex, toTeamIndex) {
   if (fromTeamIndex === toTeamIndex) return;
 
@@ -244,7 +271,7 @@ function moveMember(fromTeamIndex, fromMemberIndex, toTeamIndex) {
 
   teams[toTeamIndex].push(member);
 
-  // 빈 줄은 제거한다.
+  // 빈 줄은 제거
   teams = teams.filter((team) => team.length > 0);
 }
 
@@ -281,66 +308,48 @@ async function handleCopyImage() {
   }
 }
 
+// 결과 이미지 생성
 function drawTeamsToCanvas(teamData) {
   const scale = 2;
   const padding = 36;
-  const rowGap = 22;
-  const cardGap = 10;
-  const cardHeight = 42;
-  const rowHeaderHeight = 32;
+  const rowGap = 14;
+  const cardGap = 8;
+  const cardHeight = 36;
+  const cardPadH = 14;
+  const rowHeaderHeight = 36;
   const rowPadding = 18;
-  const maxWidth = 1100;
+  const badgeSize = 26;
+  const maxWidth = 900;
+  const font = "'Pretendard', system-ui";
 
-  const ctxForMeasure = document.createElement("canvas").getContext("2d");
-  ctxForMeasure.font = "bold 16px system-ui";
+  const ctxM = document.createElement("canvas").getContext("2d");
+  ctxM.font = `600 14px ${font}`;
 
   const rows = teamData.map((team, index) => {
-    const isLeftover =
-      index === teamData.length - 1 &&
-      team.length < Number(teamSizeInput.value);
     const title = `${index + 1}팀`;
-
     const cards = team.map((name) => {
-      const width = Math.ceil(ctxForMeasure.measureText(name).width) + 32;
-      return {
-        name,
-        width: Math.max(width, 72),
-      };
+      const w = Math.ceil(ctxM.measureText(name).width) + cardPadH * 2;
+      return { name, width: Math.max(w, 56) };
     });
 
     let lineWidth = 0;
     let lines = 1;
-
     cards.forEach((card) => {
-      if (
-        lineWidth + card.width + cardGap >
-        maxWidth - padding * 2 - rowPadding * 2
-      ) {
+      if (lineWidth + card.width + cardGap > maxWidth - padding * 2 - rowPadding * 2) {
         lines++;
         lineWidth = 0;
       }
-
       lineWidth += card.width + cardGap;
     });
 
-    const height =
-      rowPadding * 2 +
-      rowHeaderHeight +
-      lines * cardHeight +
-      (lines - 1) * cardGap;
-
-    return {
-      title,
-      cards,
-      height,
-    };
+    const height = rowPadding * 2 + rowHeaderHeight + lines * cardHeight + (lines - 1) * cardGap;
+    return { title, cards, height, index };
   });
 
   const width = maxWidth;
   const height =
-    padding * 2 +
-    52 +
-    rows.reduce((sum, row) => sum + row.height, 0) +
+    padding * 2 + 52 +
+    rows.reduce((sum, r) => sum + r.height, 0) +
     rowGap * Math.max(0, rows.length - 1);
 
   const canvas = document.createElement("canvas");
@@ -350,47 +359,63 @@ function drawTeamsToCanvas(teamData) {
   const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
 
-  ctx.fillStyle = "#ffffff";
+  // 배경
+  ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = "#111827";
-  ctx.font = "bold 26px system-ui";
-  ctx.fillText("랜덤 팀 배정 결과", padding, padding + 26);
+  // 헤더: "팀 결과"
+  ctx.fillStyle = "#1A1A1A";
+  ctx.font = `bold 20px ${font}`;
+  ctx.fillText("팀 결과", padding, padding + 20);
 
-  ctx.fillStyle = "#6b7280";
-  ctx.font = "14px system-ui";
-  ctx.fillText(
-    `총 ${teamData.flat().length}명 · ${teamData.length}개의 팀`,
-    padding,
-    padding + 50
-  );
+  // 요약 배지
+  const summaryText = `총 ${teamData.flat().length}명 · ${teamData.length}팀`;
+  ctx.font = `bold 12px ${font}`;
+  const sw = ctx.measureText(summaryText).width + 18;
+  roundRect(ctx, padding + 84, padding + 4, sw, 22, 999, "#E6F5FF", null);
+  ctx.fillStyle = "#0088D9";
+  ctx.fillText(summaryText, padding + 93, padding + 19);
 
-  let y = padding + 78;
+  // 구분선
+  ctx.strokeStyle = "#EDEDEA";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, padding + 36);
+  ctx.lineTo(width - padding, padding + 36);
+  ctx.stroke();
+
+  let y = padding + 52;
 
   rows.forEach((row) => {
-    roundRect(
-      ctx,
-      padding,
-      y,
-      width - padding * 2,
-      row.height,
-      18,
-      "#f8fafc",
-      "#e5e7eb"
-    );
+    // 팀 카드
+    roundRect(ctx, padding, y, width - padding * 2, row.height, 16, "#FAFAF9", "#EDEDEA");
 
-    ctx.fillStyle = "#111827";
-    ctx.font = "bold 17px system-ui";
-    ctx.fillText(row.title, padding + rowPadding, y + rowPadding + 18);
+    // 팀 번호 배지 (파란 둥근 사각형)
+    const badgeX = padding + rowPadding;
+    const badgeY = y + rowPadding + (rowHeaderHeight - badgeSize) / 2;
+    roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, 8, "#00A1FF", null);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = `bold 12px ${font}`;
+    ctx.textAlign = "center";
+    ctx.fillText(String(row.index + 1), badgeX + badgeSize / 2, badgeY + badgeSize * 0.68);
+    ctx.textAlign = "left";
 
-    ctx.fillStyle = "#4b5563";
-    ctx.font = "bold 13px system-ui";
-    ctx.fillText(
-      `${row.cards.length}명`,
-      width - padding - rowPadding - 40,
-      y + rowPadding + 18
-    );
+    // 팀 이름
+    ctx.fillStyle = "#1A1A1A";
+    ctx.font = `bold 14px ${font}`;
+    ctx.fillText(row.title, badgeX + badgeSize + 8, y + rowPadding + rowHeaderHeight * 0.68);
 
+    // 인원수 배지
+    const countText = `${row.cards.length}명`;
+    ctx.font = `bold 12px ${font}`;
+    const cw = ctx.measureText(countText).width + 16;
+    const countX = width - padding - rowPadding - cw;
+    const countY = y + rowPadding + (rowHeaderHeight - 22) / 2;
+    roundRect(ctx, countX, countY, cw, 22, 999, "#F0EFEB", null);
+    ctx.fillStyle = "#6B6B6B";
+    ctx.fillText(countText, countX + 8, countY + 15);
+
+    // 멤버 칩
     let x = padding + rowPadding;
     let cardY = y + rowPadding + rowHeaderHeight;
 
@@ -399,22 +424,10 @@ function drawTeamsToCanvas(teamData) {
         x = padding + rowPadding;
         cardY += cardHeight + cardGap;
       }
-
-      roundRect(
-        ctx,
-        x,
-        cardY,
-        card.width,
-        cardHeight,
-        999,
-        "#ffffff",
-        "#d1d5db"
-      );
-
-      ctx.fillStyle = "#111827";
-      ctx.font = "bold 15px system-ui";
-      ctx.fillText(card.name, x + 16, cardY + 27);
-
+      roundRect(ctx, x, cardY, card.width, cardHeight, 999, "#FFFFFF", "#DEDED9");
+      ctx.fillStyle = "#1A1A1A";
+      ctx.font = `600 14px ${font}`;
+      ctx.fillText(card.name, x + cardPadH, cardY + cardHeight * 0.65);
       x += card.width + cardGap;
     });
 
