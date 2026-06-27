@@ -51,8 +51,11 @@ async function handleMakeTeams() {
 
     // 팀 만들기 버튼은 입력한 teamSize 기준으로 새 판 생성
     teams = teamModeSelect.value === "numTeams"
+    // 인원수 기준으로 팀 생성
       ? makeRandomTeamsByNumTeams(members, teamSize)
+    // 팀 개수 기준으로 팀 생성
       : makeRandomTeams(members, teamSize);
+    // 화면 렌더링
     render();
   } catch (error) {
     console.error(error);
@@ -60,6 +63,7 @@ async function handleMakeTeams() {
   }
 }
 
+// 다시 섞기
 function handleShuffleAgain() {
   if (teams.length === 0) {
     showToast("먼저 txt 파일로 팀을 만들어 주세요");
@@ -78,6 +82,7 @@ function handleShuffleAgain() {
   render();
 }
 
+// 팀 개수 검증/저장
 function getTeamSize() {
   const teamSize = Number(teamSizeInput.value);
 
@@ -89,6 +94,7 @@ function getTeamSize() {
   return teamSize;
 }
 
+// 이름 추출
 function parseMembers(text) {
   return text
     .split(/\r?\n/)
@@ -96,7 +102,7 @@ function parseMembers(text) {
     .filter((name) => name.length > 0);
 }
 
-// 팀 개수 기준 (라운드로빈)
+// 팀 개수 기준 -> 라운드로빈으로 분배
 function makeRandomTeamsByNumTeams(memberList, numTeams) {
   const shuffled = shuffle([...memberList]);
   const result = Array.from({ length: numTeams }, () => []);
@@ -104,7 +110,7 @@ function makeRandomTeamsByNumTeams(memberList, numTeams) {
   return result;
 }
 
-// 팀당 인원 기준 (슬라이싱)
+// 팀당 인원 기준 -> 슬라이싱으로 분배
 function makeRandomTeams(memberList, teamSize) {
   const shuffled = shuffle([...memberList]);
   const result = [];
@@ -150,7 +156,7 @@ function render() {
   const total = teams.flat().length;
 
   summary.textContent = `총 ${total}명 · ${teams.length}팀`;
-  hint.innerHTML = "이름을 드래그해 팀을 조정하거나, 인원수를 바꿀 수 있어요.<br>바뀐 인원 수에서 다시 섞어보세요.";
+  hint.innerHTML = "이름을 드래그해서 팀을 조정하거나, 인원수를 바꿀 수 있어요.<br>바뀐 인원수로 다시 섞어보세요.";
   resultBtns.hidden = false;
   teamBoard.innerHTML = teams
     .map((team, teamIndex) => {
@@ -267,192 +273,44 @@ function moveMember(fromTeamIndex, fromMemberIndex, toTeamIndex) {
   teams = teams.filter((team) => team.length > 0);
 }
 
+// 이미지 복사
 async function handleCopyImage() {
   if (teams.length === 0) {
-    showToast("복사할 팀 결과가 없어요");
+    showToast("저장할 팀 결과가 없어요");
     return;
   }
 
   try {
-    const canvas = drawTeamsToCanvas(teams);
-    const blob = await canvasToBlob(canvas);
+    const canvas = await html2canvas(document.querySelector("#captureArea"), {
+      scale: 2,
+      backgroundColor: "#FFFFFF",
+      ignoreElements: (el) => el.id === "hint" || el.id === "resultBtns",
+    });
 
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "image/png": blob,
-      }),
-    ]);
-
-    showToast("팀 결과 이미지를 클립보드에 복사했어요");
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    showToast("이미지를 클립보드에 복사했어요");
   } catch (error) {
     console.error(error);
 
-    // 일부 브라우저/환경에서는 이미지 클립보드 복사가 막힐 수 있어서 다운로드로 대체
-    const canvas = drawTeamsToCanvas(teams);
-    const dataUrl = canvas.toDataURL("image/png");
-
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = "team-result.png";
-    link.click();
-
-    showToast("클립보드 복사가 막혀서 PNG로 다운로드했어요");
+    // 클립보드 복사 실패 시 다운로드로 대체
+    try {
+      const canvas = await html2canvas(document.querySelector("#captureArea"), {
+        scale: 2,
+        backgroundColor: "#FFFFFF",
+        ignoreElements: (el) => el.id === "hint" || el.id === "resultBtns",
+      });
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = "team-result.png";
+      link.click();
+      showToast("클립보드 복사가 막혀서 PNG로 저장했어요");
+    } catch {
+      showToast("이미지 생성 중 문제가 생겼어요");
+    }
   }
 }
 
-// 결과 이미지 생성
-function drawTeamsToCanvas(teamData) {
-  const scale = 2;
-  const padding = 36;
-  const rowGap = 14;
-  const cardGap = 8;
-  const cardHeight = 36;
-  const cardPadH = 14;
-  const rowHeaderHeight = 36;
-  const rowPadding = 18;
-  const badgeSize = 26;
-  const maxWidth = 900;
-  const font = "'Pretendard', system-ui";
-
-  const ctxM = document.createElement("canvas").getContext("2d");
-  ctxM.font = `600 14px ${font}`;
-
-  const rows = teamData.map((team, index) => {
-    const title = `${index + 1}팀`;
-    const cards = team.map((name) => {
-      const w = Math.ceil(ctxM.measureText(name).width) + cardPadH * 2;
-      return { name, width: Math.max(w, 56) };
-    });
-
-    let lineWidth = 0;
-    let lines = 1;
-    cards.forEach((card) => {
-      if (lineWidth + card.width + cardGap > maxWidth - padding * 2 - rowPadding * 2) {
-        lines++;
-        lineWidth = 0;
-      }
-      lineWidth += card.width + cardGap;
-    });
-
-    const height = rowPadding * 2 + rowHeaderHeight + lines * cardHeight + (lines - 1) * cardGap;
-    return { title, cards, height, index };
-  });
-
-  const width = maxWidth;
-  const height =
-    padding * 2 + 52 +
-    rows.reduce((sum, r) => sum + r.height, 0) +
-    rowGap * Math.max(0, rows.length - 1);
-
-  const canvas = document.createElement("canvas");
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-
-  const ctx = canvas.getContext("2d");
-  ctx.scale(scale, scale);
-
-  // 배경
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(0, 0, width, height);
-
-  // 헤더: "팀 결과"
-  ctx.fillStyle = "#1A1A1A";
-  ctx.font = `bold 20px ${font}`;
-  ctx.fillText("팀 결과", padding, padding + 20);
-
-  // 요약 배지
-  const summaryText = `총 ${teamData.flat().length}명 · ${teamData.length}팀`;
-  ctx.font = `bold 12px ${font}`;
-  const sw = ctx.measureText(summaryText).width + 18;
-  roundRect(ctx, padding + 84, padding + 4, sw, 22, 999, "#E6F5FF", null);
-  ctx.fillStyle = "#0088D9";
-  ctx.fillText(summaryText, padding + 93, padding + 19);
-
-  // 구분선
-  ctx.strokeStyle = "#EDEDEA";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padding, padding + 36);
-  ctx.lineTo(width - padding, padding + 36);
-  ctx.stroke();
-
-  let y = padding + 52;
-
-  rows.forEach((row) => {
-    // 팀 카드
-    roundRect(ctx, padding, y, width - padding * 2, row.height, 16, "#FAFAF9", "#EDEDEA");
-
-    // 팀 번호 배지 (파란 둥근 사각형)
-    const badgeX = padding + rowPadding;
-    const badgeY = y + rowPadding + (rowHeaderHeight - badgeSize) / 2;
-    roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, 8, "#00A1FF", null);
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = `bold 12px ${font}`;
-    ctx.textAlign = "center";
-    ctx.fillText(String(row.index + 1), badgeX + badgeSize / 2, badgeY + badgeSize * 0.68);
-    ctx.textAlign = "left";
-
-    // 팀 이름
-    ctx.fillStyle = "#1A1A1A";
-    ctx.font = `bold 14px ${font}`;
-    ctx.fillText(row.title, badgeX + badgeSize + 8, y + rowPadding + rowHeaderHeight * 0.68);
-
-    // 인원수 배지
-    const countText = `${row.cards.length}명`;
-    ctx.font = `bold 12px ${font}`;
-    const cw = ctx.measureText(countText).width + 16;
-    const countX = width - padding - rowPadding - cw;
-    const countY = y + rowPadding + (rowHeaderHeight - 22) / 2;
-    roundRect(ctx, countX, countY, cw, 22, 999, "#F0EFEB", null);
-    ctx.fillStyle = "#6B6B6B";
-    ctx.fillText(countText, countX + 8, countY + 15);
-
-    // 멤버 칩
-    let x = padding + rowPadding;
-    let cardY = y + rowPadding + rowHeaderHeight;
-
-    row.cards.forEach((card) => {
-      if (x + card.width > width - padding - rowPadding) {
-        x = padding + rowPadding;
-        cardY += cardHeight + cardGap;
-      }
-      roundRect(ctx, x, cardY, card.width, cardHeight, 999, "#FFFFFF", "#DEDED9");
-      ctx.fillStyle = "#1A1A1A";
-      ctx.font = `600 14px ${font}`;
-      ctx.fillText(card.name, x + cardPadH, cardY + cardHeight * 0.65);
-      x += card.width + cardGap;
-    });
-
-    y += row.height + rowGap;
-  });
-
-  return canvas;
-}
-
-function canvasToBlob(canvas) {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) {
-        resolve(blob);
-      } else {
-        reject(new Error("canvas blob 생성 실패"));
-      }
-    }, "image/png");
-  });
-}
-
-function roundRect(ctx, x, y, width, height, radius, fillStyle, strokeStyle) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, width, height, radius);
-  ctx.fillStyle = fillStyle;
-  ctx.fill();
-
-  if (strokeStyle) {
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-}
 
 function escapeHtml(value) {
   return value
