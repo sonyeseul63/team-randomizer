@@ -2,6 +2,7 @@ const fileInput = document.querySelector("#memberFile");
 const fileUploadWrapper = fileInput.closest(".file-upload-wrapper");
 const fileUploadText = document.querySelector("#fileUploadText");
 const teamSizeInput = document.querySelector("#teamSize");
+const teamModeSelect = document.querySelector("#teamMode");
 const makeBtn = document.querySelector("#makeBtn");
 const shuffleBtn = document.querySelector("#shuffleBtn");
 const copyImageBtn = document.querySelector("#copyImageBtn");
@@ -49,7 +50,9 @@ async function handleMakeTeams() {
     }
 
     // 팀 만들기 버튼은 입력한 teamSize 기준으로 새 판 생성
-    teams = makeRandomTeams(members, teamSize);
+    teams = teamModeSelect.value === "numTeams"
+      ? makeRandomTeamsByNumTeams(members, teamSize)
+      : makeRandomTeams(members, teamSize);
     render();
   } catch (error) {
     console.error(error);
@@ -93,16 +96,22 @@ function parseMembers(text) {
     .filter((name) => name.length > 0);
 }
 
-// 처음 팀 만들 때 사용하는 함수
-// 셔플 후 라운드로빈으로 한 명씩 돌아가며 배정 → 나머지 인원도 균등하게 분배됨
+// 팀 개수 기준 (라운드로빈)
+function makeRandomTeamsByNumTeams(memberList, numTeams) {
+  const shuffled = shuffle([...memberList]);
+  const result = Array.from({ length: numTeams }, () => []);
+  shuffled.forEach((member, i) => result[i % numTeams].push(member));
+  return result;
+}
+
+// 팀당 인원 기준 (슬라이싱)
 function makeRandomTeams(memberList, teamSize) {
   const shuffled = shuffle([...memberList]);
-  const numTeams = Math.ceil(shuffled.length / teamSize);
-  const result = Array.from({ length: numTeams }, () => []);
+  const result = [];
 
-  shuffled.forEach((member, i) => {
-    result[i % numTeams].push(member);
-  });
+  for (let i = 0; i < shuffled.length; i += teamSize) {
+    result.push(shuffled.slice(i, i + teamSize));
+  }
 
   return result;
 }
