@@ -38,10 +38,6 @@ h1, h2, h3, p {
   gap: 8px;
 }
 
-.logo-icon {
-  font-size: 20px;
-  line-height: 1;
-}
 
 .logo-text {
   font-size: 17px;
@@ -57,17 +53,13 @@ h1, h2, h3, p {
   padding: 40px 0 80px;
 }
 
-/* ── Hero ── */
-.hero {
-  margin-bottom: 28px;
-  text-align: center;
-}
 
 .hero-icon {
   font-size: 72px;
   line-height: 1;
-  margin-bottom: 12px;
-  display: inline-block;
+  margin-bottom: 28px;
+  display: block;
+  text-align: center;
   cursor: default;
   transition: transform 0.6s ease;
 }
@@ -76,11 +68,6 @@ h1, h2, h3, p {
   transform: rotate(360deg);
 }
 
-.hero-desc {
-  margin: 0;
-  font-size: 14px;
-  color: #9A9A95;
-}
 
 /* ── Card/Panel ── */
 .panel {
@@ -89,35 +76,88 @@ h1, h2, h3, p {
 }
 
 /* ── Controls ── */
-.controls {
-  display: grid;
-  grid-template-columns: 1.8fr 140px auto;
-  gap: 20px;
-  align-items: end;
-  padding: 24px;
-  margin-bottom: 20px;
+.app-body {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
 }
 
-.field {
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  flex: 1.2;
+}
+
+.board-wrap {
+  flex: 2.8;
+}
+
+.controls-bottom {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 8px;
 }
 
-.field-label {
-  font-size: 15px;
-  font-weight: 700;
-  color: #1A1A1A;
-  letter-spacing: 0.03em;
+
+
+/* ── Input tabs ── */
+.input-tabs {
+  display: flex;
+  border-bottom: 1.5px solid #EDEDEA;
 }
 
-.field-label-hint {
+.input-tab {
+  min-height: auto;
+  padding: 5px 12px 7px;
+  border-radius: 0;
+  background: transparent;
+  color: #9A9A95;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1.5px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.input-tab:hover {
+  background: transparent;
+  color: #0088D9;
+}
+
+.input-tab.active {
+  background: transparent;
+  color: #00A1FF;
+  border-bottom-color: #00A1FF;
+}
+
+textarea#memberText {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1.5px dashed #C8C7C2;
+  border-radius: 12px;
+  background: #FAFAF9;
   font-size: 14px;
-  font-weight: 400;
-  color: #ADADAD;
-  margin-left: 4px;
+  font-family: inherit;
+  color: #1A1A1A;
+  resize: vertical;
+  transition: border-color 0.15s, background 0.15s;
+  line-height: 1.6;
 }
 
+textarea#memberText:focus {
+  outline: none;
+  border-color: #00A1FF;
+  border-style: solid;
+  background: #FFFFFF;
+}
+
+textarea#memberText::placeholder {
+  color: #9A9A95;
+}
 
 /* Custom file upload */
 .file-upload-wrapper {
@@ -162,11 +202,6 @@ h1, h2, h3, p {
   border-style: solid;
 }
 
-.file-upload-icon {
-  font-size: 16px;
-  line-height: 1;
-  flex-shrink: 0;
-}
 
 .file-upload-text {
   overflow: hidden;
@@ -179,8 +214,8 @@ h1, h2, h3, p {
   appearance: none;
   border: none;
   background: transparent;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   font-family: inherit;
   color: #1A1A1A;
   cursor: pointer;
@@ -227,9 +262,6 @@ input[type="number"]:focus {
   flex-wrap: wrap;
 }
 
-.controls-btn {
-  align-self: end;
-}
 
 button {
   min-height: 48px;
@@ -463,21 +495,18 @@ button.secondary:hover {
 
 /* ── Mobile ── */
 @media (max-width: 760px) {
+  .app-body {
+    flex-direction: column;
+  }
+
   .controls {
-    grid-template-columns: 1fr;
+    flex: none;
+    width: 100%;
   }
 
-  .hero-title {
-    font-size: 22px;
-  }
-
-  .button-group {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .controls-btn {
-    display: flex;
+  .board-wrap {
+    flex: none;
+    width: 100%;
   }
 
   .team-board {

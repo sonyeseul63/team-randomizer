@@ -1,8 +1,17 @@
 const fileInput = document.querySelector("#memberFile");
 const fileUploadWrapper = fileInput.closest(".file-upload-wrapper");
 const fileUploadText = document.querySelector("#fileUploadText");
+const memberText = document.querySelector("#memberText");
+
+document.querySelectorAll("#inputModeControl .input-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll("#inputModeControl .input-tab").forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+    document.querySelector("#tabFile").hidden = tab.dataset.tab !== "file";
+    document.querySelector("#tabText").hidden = tab.dataset.tab !== "text";
+  });
+});
 const teamSizeInput = document.querySelector("#teamSize");
-const teamModeSelect = document.querySelector("#teamMode");
 const makeBtn = document.querySelector("#makeBtn");
 const shuffleBtn = document.querySelector("#shuffleBtn");
 const copyImageBtn = document.querySelector("#copyImageBtn");
@@ -21,7 +30,6 @@ fileInput.addEventListener("change", () => {
   }
 });
 
-let members = [];
 let teams = [];
 let draggedInfo = null;
 
@@ -33,7 +41,10 @@ async function handleMakeTeams() {
   const file = fileInput.files[0];
   const teamSize = getTeamSize();
 
-  if (!file) {
+  const isFileTab = document.querySelector("#inputModeControl .input-tab.active").dataset.tab === "file";
+  const teamMode = document.querySelector("#teamMode").value;
+
+  if (isFileTab && !file) {
     showToast("구성원 txt 파일을 먼저 선택해주세요");
     return;
   }
@@ -41,21 +52,17 @@ async function handleMakeTeams() {
   if (!teamSize) return;
 
   try {
-    const text = await file.text();
-    members = parseMembers(text);
+    const text = isFileTab ? await file.text() : memberText.value;
+    const members = parseMembers(text);
 
     if (members.length === 0) {
       showToast("파일에 구성원 이름이 없어요");
       return;
     }
 
-    // 팀 만들기 버튼은 입력한 teamSize 기준으로 새 판 생성
-    teams = teamModeSelect.value === "numTeams"
-    // 인원수 기준으로 팀 생성
+    teams = teamMode === "numTeams"
       ? makeRandomTeamsByNumTeams(members, teamSize)
-    // 팀 개수 기준으로 팀 생성
       : makeRandomTeams(members, teamSize);
-    // 화면 렌더링
     render();
   } catch (error) {
     console.error(error);
@@ -63,26 +70,19 @@ async function handleMakeTeams() {
   }
 }
 
-// 다시 섞기
 function handleShuffleAgain() {
   if (teams.length === 0) {
     showToast("먼저 txt 파일로 팀을 만들어 주세요");
     return;
   }
 
-  // 현재 사용자가 드래그로 조정한 팀별 인원 수 저장
   const currentLayout = teams.map((team) => team.length);
-
-  // 현재 화면에 있는 모든 이름을 다시 모음
   const currentMembers = teams.flat();
-
-  // 현재 팀별 인원 수는 유지하고, 이름만 다시 랜덤 배치
   teams = makeRandomTeamsByLayout(currentMembers, currentLayout);
 
   render();
 }
 
-// 팀 개수 검증/저장
 function getTeamSize() {
   const teamSize = Number(teamSizeInput.value);
 
@@ -94,7 +94,6 @@ function getTeamSize() {
   return teamSize;
 }
 
-// 이름 추출
 function parseMembers(text) {
   return text
     .split(/\r?\n/)
@@ -102,7 +101,6 @@ function parseMembers(text) {
     .filter((name) => name.length > 0);
 }
 
-// 팀 개수 기준 -> 라운드로빈으로 분배
 function makeRandomTeamsByNumTeams(memberList, numTeams) {
   const shuffled = shuffle([...memberList]);
   const result = Array.from({ length: numTeams }, () => []);
@@ -110,7 +108,6 @@ function makeRandomTeamsByNumTeams(memberList, numTeams) {
   return result;
 }
 
-// 팀당 인원 기준 -> 슬라이싱으로 분배
 function makeRandomTeams(memberList, teamSize) {
   const shuffled = shuffle([...memberList]);
   const result = [];
@@ -122,8 +119,6 @@ function makeRandomTeams(memberList, teamSize) {
   return result;
 }
 
-// 섞기에 사용하는 함수
-// 현재 팀별 인원 수 layout을 유지한 채 이름만 다시 섞음
 function makeRandomTeamsByLayout(memberList, layout) {
   const shuffled = shuffle([...memberList]);
   const result = [];
@@ -139,7 +134,6 @@ function makeRandomTeamsByLayout(memberList, layout) {
   return result;
 }
 
-// Fisher-Yates shuffle
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const randomIndex = Math.floor(Math.random() * (i + 1));
@@ -150,14 +144,12 @@ function shuffle(array) {
   return array;
 }
 
-// 팀 생성후 화면 렌더링
 function render() {
   const teamSize = getTeamSize() ?? 1;
   const total = teams.flat().length;
 
   summary.textContent = `총 ${total}명 · ${teams.length}팀`;
   hint.innerHTML = "이름을 드래그해서 팀을 조정하거나, 인원수를 바꿀 수 있어요.<br>바뀐 인원수로 다시 섞어보세요.";
-  resultBtns.hidden = false;
   teamBoard.innerHTML = teams
     .map((team, teamIndex) => {
       const isLeftover =
@@ -201,7 +193,6 @@ function render() {
   attachDragEvents();
 }
 
-// 드래그
 function attachDragEvents() {
   const cards = document.querySelectorAll(".member-card");
   const rows = document.querySelectorAll(".team-row");
@@ -255,7 +246,6 @@ function attachDragEvents() {
   });
 }
 
-// 멤버 저장
 function moveMember(fromTeamIndex, fromMemberIndex, toTeamIndex) {
   if (fromTeamIndex === toTeamIndex) return;
 
@@ -268,12 +258,9 @@ function moveMember(fromTeamIndex, fromMemberIndex, toTeamIndex) {
   if (!member) return;
 
   teams[toTeamIndex].push(member);
-
-  // 빈 줄은 제거
   teams = teams.filter((team) => team.length > 0);
 }
 
-// 이미지 복사
 async function handleCopyImage() {
   if (teams.length === 0) {
     showToast("저장할 팀 결과가 없어요");
@@ -293,7 +280,6 @@ async function handleCopyImage() {
   } catch (error) {
     console.error(error);
 
-    // 클립보드 복사 실패 시 다운로드로 대체
     try {
       const canvas = await html2canvas(document.querySelector("#captureArea"), {
         scale: 2,
@@ -310,7 +296,6 @@ async function handleCopyImage() {
     }
   }
 }
-
 
 function escapeHtml(value) {
   return value

@@ -24,30 +24,32 @@
   </header>
 
   <main class="app">
-    <div class="hero">
-      <div class="hero-icon">🎲</div>
-    </div>
-
+    <div class="app-body">
     <section class="panel controls">
-      <div class="field">
-        <label class="field-label" for="memberFile">구성원 파일 <span class="field-label-hint">이름을 줄 단위로 작성한 .txt 파일</span></label>
+      <div class="hero-icon">🎲</div>
+      <div class="input-tabs" id="inputModeControl">
+        <button type="button" class="input-tab active" data-tab="file">파일 업로드</button>
+        <button type="button" class="input-tab" data-tab="text">직접 입력</button>
+      </div>
+
+      <div class="tab-panel" id="tabFile">
         <div class="file-upload-wrapper">
           <div class="file-upload-display">
-<span id="fileUploadText" class="file-upload-text">클릭해서 .txt 파일 선택</span>
+            <span id="fileUploadText" class="file-upload-text">클릭해서 .txt 파일 선택</span>
           </div>
           <input id="memberFile" type="file" accept=".txt,text/plain" />
         </div>
       </div>
+      <div class="tab-panel" id="tabText" hidden>
+        <textarea id="memberText" placeholder="김민지&#10;이서연&#10;박지훈&#10;최유진"></textarea>
+      </div>
 
-      <div class="field">
+      <div class="controls-bottom">
         <select id="teamMode" class="mode-select">
           <option value="perTeam">팀당 인원</option>
           <option value="numTeams">팀 개수</option>
         </select>
         <input id="teamSize" type="number" min="1" value="3" />
-      </div>
-
-      <div class="button-group controls-btn">
         <button id="makeBtn" type="button">팀 생성하기</button>
       </div>
     </section>
@@ -81,6 +83,7 @@
 </div>
       </div>
     </section>
+    </div>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
