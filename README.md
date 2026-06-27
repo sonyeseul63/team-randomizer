@@ -25,6 +25,8 @@
 
 ### 배포
 
+**라이브:** https://team-randomizer-gules.vercel.app/
+
 Vercel로 배포 중 — GitHub 푸시 시 자동 재배포
 
 ## txt 파일 형식
